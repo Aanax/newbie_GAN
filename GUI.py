@@ -22,9 +22,10 @@ class netLearningThread(QThread):
     progress = pyqtSignal(int)
     saver = pyqtSignal(str)
 
-    def __init__(self, usesaved, n_epoch=2):
+    def __init__(self, usesaved, savename, n_epoch=2):
         QThread.__init__(self)
-        
+
+        self.savename = savename
         self.n_epoch = n_epoch
         self.usesaved = usesaved
 
@@ -127,14 +128,14 @@ class netLearningThread(QThread):
 
         # LOAD WEIGHTS
         if self.usesaved:
-            model.set_weights(joblib.load("name.pkl"))
+            model.set_weights(joblib.load(self.savename))
 
         # TRAINING LOOP
 
         for epoch in range(0, n_epoch):
 
             print("Epoch ", epoch)  # ,"Iter ",xnum)
-            joblib.dump(model.get_weights(),"name.pkl",compress=9)
+            joblib.dump(model.get_weights(), self.savename, compress=9)
             for xnum in range(0, len(X)):
 
                 # unfreezing tester
@@ -200,9 +201,10 @@ class Example(QWidget,QThread):
         Creates net training thread and runs.
         :return:
         '''
-        n_epoch = 20
+        n_epoch = 200
         usesaved = self.savebox.isChecked()
-        self.get_thread = netLearningThread(usesaved, n_epoch)
+        savepath = self.saveedit.toPlainText()
+        self.get_thread = netLearningThread(usesaved, savepath, n_epoch)
         self.get_thread.transitional_pic.connect(
             self.writeSmth)  # self.get_thread, SIGNAL('transitional_pic(Qmatrix?)'),
         self.get_thread.idol_pic.connect(
@@ -257,11 +259,12 @@ class Example(QWidget,QThread):
         :return:
         '''
 
-        self.setGeometry(1300, 300, 500, 500)
+        self.setGeometry(1300, 300, 400, 400)
         self.setWindowTitle('Message box')
 
         OneVert = QVBoxLayout()
         TwoVert = QVBoxLayout()
+        SaveHor = QVBoxLayout()
         BigHor = QHBoxLayout(self)
 
         qbtn = QPushButton('start', self)
@@ -285,11 +288,11 @@ class Example(QWidget,QThread):
 
         self.label = QLabel("LABEL",self)
         #self.label.move(100,100)
-        self.label.resize(300, 300)
+        self.label.resize(200, 200)
 
         self.label_idol = QLabel("LABEL_IDOL", self)
         #self.label_idol.move(500, 100)
-        self.label_idol.resize(300, 300)
+        self.label_idol.resize(200, 200)
 
         self.pbar = QProgressBar(self)
         self.pbar.setGeometry(200, 80, 250, 20)
@@ -299,12 +302,24 @@ class Example(QWidget,QThread):
         # pixmap = QPixmap(os.getcwd() + '/cutted.jpg')
         # self.label.setPixmap(pixmap)
 
+        self.saveedit = QTextEdit("Save/load path", self)
+        self.saveedit.setMaximumWidth(200)
+        self.saveedit.setMaximumHeight(60)
 
         #OneVert.setGeometry( 0,0,500,500)
         OneVert.addWidget(qbtn)
-        OneVert.addWidget(self.savebox)
+        #OneVert.addWidget(self.savebox)
+        OneVert.setAlignment(qbtn, Qt.AlignTop)
+        SaveHor.addWidget(self.savebox)
+        SaveHor.addWidget(self.saveedit)
+        OneVert.addLayout(SaveHor)
+        OneVert.setAlignment(SaveHor, Qt.AlignTop)
         OneVert.addWidget(self.pbar)
+        OneVert.setAlignment(self.pbar, Qt.AlignTop)
+
         OneVert.addWidget(helpbtn)
+        #OneVert.setAlignment(OneVert.widget(), Qt.AlignTop)
+
         TwoVert.addWidget(self.label)
         TwoVert.addWidget(self.label_idol)
 
