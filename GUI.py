@@ -35,10 +35,15 @@ class netLearningThread(QThread):
     def showpic(self, digit, multiplier=70, size=200, shape=(8, 8)):
         '''
         Converts np.array into Qpixmap. Whith desired resizing and multiplying
+
         :param digit: np.array(image), must be broadcastable to shape shape
+
         :param multiplier: param to be multiplied with digit (brightness correction)
+
         :param size: digit will be resized to (size,size)
+
         :param shape: digit must be broadcastable to shape shape
+
         :return: Qpixmap
         '''
         tstimage1 = Image.fromarray(digit.reshape(shape) * multiplier)
@@ -54,8 +59,11 @@ class netLearningThread(QThread):
         '''
         The whole training done here. Defines the net. Loads data. Trains the net.
         Rewrites net weights into file each epoch.
+
         :param usesaved: Whether to use precomputed weights from file
+
         :param n_epoch: Number of epochs to learn
+
         :return:
         '''
 
@@ -179,6 +187,7 @@ class netLearningThread(QThread):
     def run(self):
         '''
         Default method. Everything in thread runs from here.
+
         :return:
         '''
         self.train_net(self.usesaved, self.n_epoch)
@@ -199,6 +208,7 @@ class Example(QWidget,QThread):
     def runtrain(self):
         '''
         Creates net training thread and runs.
+
         :return:
         '''
         n_epoch = 200
@@ -217,7 +227,9 @@ class Example(QWidget,QThread):
     def show_idol(self, Smth):
         '''
         Draws the picture of desired result.
+
         :param Smth: Desired result (Qpixmap)
+
         :return:
         '''
         # self.label.setText("GotSmth")
@@ -249,13 +261,15 @@ class Example(QWidget,QThread):
     def helpopen(self):
         '''
         opens helpfile in browser
+
         :return:
         '''
-        webbrowser.open("./help.htm")
+        webbrowser.open("/home/aanax/Desktop/GAN/gui/_build/html/index.html")
 
     def initUI(self):
         '''
         Creates widgets.
+
         :return:
         '''
 
@@ -333,7 +347,9 @@ class Example(QWidget,QThread):
     def writeSmth(self, Smth):
         '''
         Updates the pic of current progress.
+
         :param Smth: pic of current progress (Qpixmap)
+        
         :return:
         '''
         # self.label.setText("GotSmth")
@@ -351,7 +367,7 @@ class Example(QWidget,QThread):
         #   event.accept()
         # else:
         #   event.accept()
-
-app = QApplication(sys.argv)
-ex = Example()
-sys.exit(app.exec_())
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = Example()
+    sys.exit(app.exec_())
