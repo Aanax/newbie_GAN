@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QWidget, QCheckBox, QHBoxLayout, QDesktopWidget, QApplication, QMessageBox, QPushButton, QLabel, QProgressBar, QTextEdit, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QFileDialog, QCheckBox, QHBoxLayout, QDesktopWidget, QApplication, QMessageBox, QPushButton, QLabel, QProgressBar, QTextEdit, QVBoxLayout
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QCoreApplication,  pyqtSignal
 from PyQt5.QtCore import QThread, Qt
@@ -7,10 +7,14 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QMainWindow, QApplication
 #import design
 import os
+import sip
+import PyQt5
 import numpy as np
 from sklearn.externals import joblib
 from PIL import Image
 import webbrowser
+from tqdm import tqdm
+import unittest
 
 class netLearningThread(QThread):
     '''
@@ -266,6 +270,10 @@ class Example(QWidget,QThread):
         '''
         webbrowser.open("/home/aanax/Desktop/GAN/gui/_build/html/index.html")
 
+    def savepath(self):
+        self.savep = QFileDialog(self)
+
+
     def initUI(self):
         '''
         Creates widgets.
@@ -281,9 +289,16 @@ class Example(QWidget,QThread):
         SaveHor = QVBoxLayout()
         BigHor = QHBoxLayout(self)
 
-        qbtn = QPushButton('start', self)
+        qbtn = QPushButton('Start', self)
         qbtn.clicked.connect(self.runtrain)
         qbtn.setMaximumWidth(200)
+
+        l = QPushButton("loadpath",self)
+        s = QPushButton("savepath",self)
+        l.setMaximumWidth(200)
+        s.setMaximumWidth(200)
+        s.clicked.connect(self.savepath)
+
         #qbtn.clicked.connect(self.runtrain)
         # qbtn.resize(qbtn.sizeHint())
         #qbtn.move(50, 50)
@@ -322,6 +337,8 @@ class Example(QWidget,QThread):
 
         #OneVert.setGeometry( 0,0,500,500)
         OneVert.addWidget(qbtn)
+        OneVert.addWidget(s)
+        OneVert.addWidget(l)
         #OneVert.addWidget(self.savebox)
         OneVert.setAlignment(qbtn, Qt.AlignTop)
         SaveHor.addWidget(self.savebox)
@@ -349,7 +366,7 @@ class Example(QWidget,QThread):
         Updates the pic of current progress.
 
         :param Smth: pic of current progress (Qpixmap)
-        
+
         :return:
         '''
         # self.label.setText("GotSmth")
@@ -358,7 +375,7 @@ class Example(QWidget,QThread):
         self.label.setPixmap(myScaledPixmap)
 
     def closeEvent(self, event):
-        pass
+        sip.delete(self)
         # reply = QMessageBox.question(self, 'Message',
         #   "Are you sure to quit?", QMessageBox.Yes |
         #   QMessageBox.No, QMessageBox.No)
@@ -368,6 +385,91 @@ class Example(QWidget,QThread):
         # else:
         #   event.accept()
 if __name__ == '__main__':
+
     app = QApplication(sys.argv)
+
+    def tst_showpic(digit, multiplier=400.0, size=200, shape=(8, 8)):
+        '''
+        Test showpic
+        '''
+        if (shape[0] == 0) or (shape[1] == 0):
+            # print("Zero shape passed")
+            return 0
+        tstimage1 = Image.fromarray(digit.reshape(shape) * float(multiplier))
+        tstimage1 = tstimage1.convert('L')
+        tstimage1 = tstimage1.resize((size, size))
+        qPix = tstimage1  # .toqpixmap()
+        # data = tstimage1.toString('raw', 'RGBA')
+        # qIm = QtGui.QImage(data, tstimage1.size[0], tstimage1.size[1], QtGui.QImage.Format_ARGB32)
+        return qPix
+
+    def test_showpic(start=0, stop=10, mstart=0, mstop=50):
+    # 400
+    # 200
+        print("Testing showpic. n from ",start," to ",stop," Mult from ",mstart," to ",mstop)
+        for n in tqdm(range(start, stop)):
+            for mult in np.linspace(mstart, mstop, (mstop - mstart) * 1000):
+                shape = (n, n)
+                size = n
+                X = np.zeros(shape)
+                if n != 0:
+                    posx = np.random.randint(low=0, high=n)
+                    posy = np.random.randint(low=0, high=n)
+                    X[posx][posy] = 1.0
+                res = tst_showpic(X, multiplier=mult, size=size, shape=shape)
+                if n == 0:
+                    assert res == 0, ("Passed size 0 Wanted 0 Got", res, "n=", n, "mult=", mult)
+                else:
+                    assert np.array_equal((X * mult).astype(int).nonzero(), np.array(res).nonzero()), (
+                    "Wanted", (X * mult).astype(int).nonzero(), "Got", np.array(res).nonzero(), "n=", n, "mult=", mult)
+        #print("All tests gone okay ( n in range", start, "-", stop, "mult in range", mstart, "-", mstop)
+        print("Showpic function test - OK")
+
+    class SimpleWidgetTestCase(unittest.TestCase):
+        def setUp(self):
+            self.widget = Example()
+
+        def test_default_widget_size(self):
+            self.assertEqual(self.widget.size(), PyQt5.QtCore.QSize(400, 400),
+                             'incorrect default size')
+            print("Default size - OK")
+
+        def test_children(self):
+            self.assertEqual(len(self.widget.children()), 10 , "Incorrect number of widgents created")
+            print("Widgets creation - OK")
+
+        def test_threading_ability(self):
+            self.assertGreater(self.widget.thread().idealThreadCount(), 2,
+                            "Cant run two threads or the number of processor cores could not be detected.")
+            print("Threading ability - OK")
+
+        def tearDown(self):
+
+            #del self.widget
+            #self.widget.hide()
+            #self.widget.destroy()
+            #self.widget.close()
+            #sip.delete(self.widget)
+            #self.widget = None
+            self.widget.close()
+            #self.widget.deleteLater()
+            #self.widget.closeEvent()
+            #self.widget.destroy() #dispose()
+
+
+
+
+    tester=SimpleWidgetTestCase()
+    tester.setUp()
+    tester.test_default_widget_size()
+    tester.test_children()
+    tester.test_threading_ability()
+    tester.tearDown()
+    #del tester
+
+    test_showpic()
+
+
+
     ex = Example()
     sys.exit(app.exec_())
