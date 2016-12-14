@@ -26,12 +26,12 @@ class netLearningThread(QThread):
     progress = pyqtSignal(int)
     saver = pyqtSignal(str)
 
-    def __init__(self, usesaved, savename, n_epoch=2):
+    def __init__(self, savepath, loadpath, n_epoch=2):
         QThread.__init__(self)
 
-        self.savename = savename
+        self.savename = savepath
         self.n_epoch = n_epoch
-        self.usesaved = usesaved
+        self.loadpath = loadpath
 
     def __del__(self):
         self.wait()
@@ -59,7 +59,7 @@ class netLearningThread(QThread):
         return qPix
         # tstimage1.show()
 
-    def train_net(self, usesaved, n_epoch=500):
+    def train_net(self, n_epoch=500):
         '''
         The whole training done here. Defines the net. Loads data. Trains the net.
         Rewrites net weights into file each epoch.
@@ -139,8 +139,8 @@ class netLearningThread(QThread):
         get_activations = theano.function([model.layers[0].input], model.layers[1].output, allow_input_downcast=True)
 
         # LOAD WEIGHTS
-        if self.usesaved:
-            model.set_weights(joblib.load(self.savename))
+        if self.loadpath:
+            model.set_weights(joblib.load(self.loadpath))
 
         # TRAINING LOOP
 
@@ -194,7 +194,7 @@ class netLearningThread(QThread):
 
         :return:
         '''
-        self.train_net(self.usesaved, self.n_epoch)
+        self.train_net(self.n_epoch)
 
 
 
@@ -216,9 +216,9 @@ class Example(QWidget,QThread):
         :return:
         '''
         n_epoch = 200
-        usesaved = self.savebox.isChecked()
-        savepath = self.saveedit.toPlainText()
-        self.get_thread = netLearningThread(usesaved, savepath, n_epoch)
+        # usesaved = self.savebox.isChecked()
+        # savepath = self.saveedit.toPlainText()
+        self.get_thread = netLearningThread(self.savep[0],self.loadp[0], n_epoch)
         self.get_thread.transitional_pic.connect(
             self.writeSmth)  # self.get_thread, SIGNAL('transitional_pic(Qmatrix?)'),
         self.get_thread.idol_pic.connect(
@@ -271,18 +271,27 @@ class Example(QWidget,QThread):
         webbrowser.open("/home/aanax/Desktop/GAN/gui/_build/html/index.html")
 
     def savepath(self):
-        self.savep = QFileDialog(self)
-
-
+        '''
+        Allows user to choose where to save the model via FileDialog
+        '''
+        self.savep = QFileDialog.getSaveFileName(filter="*.pkl")
+        self.saveedit.setText("Saving to " + str(self.savep[0]) + "\n\n" + "Loading from " + str(self.loadp[0]))
+    def loadpath(self):
+        '''
+        Allows user to choose where to save the model via FileDialog
+        '''
+        self.loadp = QFileDialog.getOpenFileName(filter="*.pkl")  #OpenFileName(filter="*.pkl")
+        self.saveedit.setText("Saving to "+str(self.savep[0])+"\n\n"+"Loading from "+str(self.loadp[0]))
     def initUI(self):
         '''
         Creates widgets.
-
-        :return:
         '''
 
         self.setGeometry(1300, 300, 400, 400)
         self.setWindowTitle('Message box')
+
+        self.savep = ["Default.pkl"]
+        self.loadp = ["Default.pkl"]
 
         OneVert = QVBoxLayout()
         TwoVert = QVBoxLayout()
@@ -293,11 +302,12 @@ class Example(QWidget,QThread):
         qbtn.clicked.connect(self.runtrain)
         qbtn.setMaximumWidth(200)
 
-        l = QPushButton("loadpath",self)
-        s = QPushButton("savepath",self)
+        l = QPushButton("Load from ...",self)
+        s = QPushButton("Save to ...",self)
         l.setMaximumWidth(200)
         s.setMaximumWidth(200)
         s.clicked.connect(self.savepath)
+        l.clicked.connect(self.loadpath)
 
         #qbtn.clicked.connect(self.runtrain)
         # qbtn.resize(qbtn.sizeHint())
@@ -312,8 +322,8 @@ class Example(QWidget,QThread):
         helpbtn.setMaximumWidth(200)
 
 
-        self.savebox = QCheckBox(self)
-        self.savebox.setText("UseSaved")
+        #self.savebox = QCheckBox(self)
+        #self.savebox.setText("UseSaved")
 
         self.label = QLabel("LABEL",self)
         #self.label.move(100,100)
@@ -333,7 +343,8 @@ class Example(QWidget,QThread):
 
         self.saveedit = QTextEdit("Save/load path", self)
         self.saveedit.setMaximumWidth(200)
-        self.saveedit.setMaximumHeight(60)
+        self.saveedit.setMaximumHeight(200)
+        self.saveedit.setReadOnly(True)
 
         #OneVert.setGeometry( 0,0,500,500)
         OneVert.addWidget(qbtn)
@@ -341,7 +352,7 @@ class Example(QWidget,QThread):
         OneVert.addWidget(l)
         #OneVert.addWidget(self.savebox)
         OneVert.setAlignment(qbtn, Qt.AlignTop)
-        SaveHor.addWidget(self.savebox)
+        #SaveHor.addWidget(self.savebox)
         SaveHor.addWidget(self.saveedit)
         OneVert.addLayout(SaveHor)
         OneVert.setAlignment(SaveHor, Qt.AlignTop)
@@ -367,7 +378,6 @@ class Example(QWidget,QThread):
 
         :param Smth: pic of current progress (Qpixmap)
 
-        :return:
         '''
         # self.label.setText("GotSmth")
         # pixmap = QPixmap(os.getcwd() + '/cutted.jpg')
@@ -390,7 +400,7 @@ if __name__ == '__main__':
 
     def tst_showpic(digit, multiplier=400.0, size=200, shape=(8, 8)):
         '''
-        Test showpic
+        Copy of showpic function (for test).
         '''
         if (shape[0] == 0) or (shape[1] == 0):
             # print("Zero shape passed")
@@ -404,6 +414,9 @@ if __name__ == '__main__':
         return qPix
 
     def test_showpic(start=0, stop=10, mstart=0, mstop=50):
+        '''
+        Tests showpic function.
+        '''
     # 400
     # 200
         print("Testing showpic. n from ",start," to ",stop," Mult from ",mstart," to ",mstop)
@@ -426,24 +439,45 @@ if __name__ == '__main__':
         print("Showpic function test - OK")
 
     class SimpleWidgetTestCase(unittest.TestCase):
+        '''
+        Class for testing gui.
+        '''
         def setUp(self):
+            '''
+            Creates widgets to test.
+            '''
             self.widget = Example()
 
         def test_default_widget_size(self):
+            '''
+            Tests main window default size.
+            '''
             self.assertEqual(self.widget.size(), PyQt5.QtCore.QSize(400, 400),
                              'incorrect default size')
             print("Default size - OK")
 
         def test_children(self):
-            self.assertEqual(len(self.widget.children()), 10 , "Incorrect number of widgents created")
+            '''
+            Tests whether all widgets was spawned.
+            :return:
+            '''
+            self.assertEqual(len(self.widget.children()), 9 , "Incorrect number of widgents created")
             print("Widgets creation - OK")
 
         def test_threading_ability(self):
+            '''
+            Tests whether users computer supports multithreading.
+            :return:
+            '''
             self.assertGreater(self.widget.thread().idealThreadCount(), 2,
                             "Cant run two threads or the number of processor cores could not be detected.")
             print("Threading ability - OK")
 
         def tearDown(self):
+            '''
+            Closes widget that was opened for testing.
+            :return:
+            '''
 
             #del self.widget
             #self.widget.hide()
@@ -467,7 +501,7 @@ if __name__ == '__main__':
     tester.tearDown()
     #del tester
 
-    test_showpic()
+    #test_showpic()
 
 
 
