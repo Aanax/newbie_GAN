@@ -207,6 +207,7 @@ class Example(QWidget,QThread):
     def __init__(self):
         super().__init__()
 
+        self.setWindowTitle("GAN workflow visualizer")
         self.initUI()
 
     def runtrain(self):
@@ -286,6 +287,9 @@ class Example(QWidget,QThread):
         '''
         Creates widgets.
         '''
+
+
+
 
         self.setGeometry(1300, 300, 400, 400)
         self.setWindowTitle('Message box')
@@ -396,7 +400,7 @@ class Example(QWidget,QThread):
         #   event.accept()
 if __name__ == '__main__':
 
-    app = QApplication(sys.argv)
+    app = QApplication(sys.argv) # sys.argv,
 
     def tst_showpic(digit, multiplier=400.0, size=200, shape=(8, 8)):
         '''
@@ -506,4 +510,5 @@ if __name__ == '__main__':
 
 
     ex = Example()
+    ex.setWindowTitle("GAN workflow visualizer")
     sys.exit(app.exec_())
